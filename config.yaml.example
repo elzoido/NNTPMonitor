@@ -1,0 +1,13 @@
+NNTP: news.piratenpartei.de
+NNTPPort: 119
+NNTPUser: Username (optional)
+NNTPPass: Password (optional)
+---
+- Globale Suche nach "BGE":
+    groups: pirates.*
+    regexp: \bBGE\b
+    mailto: ueberwacher@example.invalid
+- BaWü-weite Suche nach "Aufstellungsversammlung":
+    groups: pirates.de.region.bw.*
+    regexp: \b(Aufstellungsversammlung|AV)\b
+    mailto: trigger2@example.invalid
