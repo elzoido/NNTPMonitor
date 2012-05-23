@@ -28,7 +28,7 @@ sub DisplayHelp {
     print "${under}${bold}NNTPMonitor${norm}\n\n";
     print "Perl-Script to send mails if certain keywords are found in Usenet-Groups via NNTP\n";
     print "The first run will NOT trigger events. All subsequent runs will trigger only on newer hits.\n\n";
-    print "Usage: $0 [-v] [-h] [-r] [-a]\n\n";
+    print "Usage: $0 [-v] [-h] [-a]\n\n";
     print "\t${bold}-v, --verbose${norm}\n\t\tBe verbose\n";
     print "\t${bold}-h, --help${norm}\n\t\tDisplay this help screen\n";
     print "\t${bold}-a, --all${norm}\n\t\tTrigger on all found hits, not just on all new hits since last run. ${bold}Caution:${norm} Will take long to run and probably put heavy strain on the Newsserver and your mailbox.\n";
