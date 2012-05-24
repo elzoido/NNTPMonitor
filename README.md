@@ -6,10 +6,11 @@ Perl-Script to trigger events (Mail, RSS, ...) if certain keywords are found in 
 
 I. Prerequisites (Ubuntu-Packages)
 
-Perl (perl)
-Getopt::Long (perl-base)
-YAML (libyaml-perl)
-News::NNTPClient (libnews-nntpclient-perl)
+* Perl (perl)
+* Getopt::Long (perl-base)
+* YAML (libyaml-perl)
+* News::NNTPClient (libnews-nntpclient-perl)
+* Email::Simple (libemail-simple-perl)
 
 II. Usage
 

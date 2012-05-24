@@ -13,8 +13,13 @@ my ($norm, $bold, $under) = map { $t->Tputs($_,1) } qw/me md us/;
 
 use News::NNTPClient;
 use YAML qw'LoadFile DumpFile';
+
+use Email::Simple;
+
 use Getopt::Long;
 Getopt::Long::Configure qw'bundling';
+
+#my $parser = new MIME::Parser;
 
 my $verbose;
 my $help;
@@ -90,6 +95,28 @@ my @newnews = $news->newnews($lastrun);
 
 for my $mid (@newnews) {
     chomp($mid);
+    my $headertext = $news->head($mid);
+    my $header = Email::Simple->new(join('',@$headertext));
+ #   my $header = $parser->parse_data($headertext);
+    if ($header->header('Control')) {
+        # Control message, skip it!
+        next;
+    }
+    my $newsgroups = $header->header('Newsgroups');
+    chomp($newsgroups);
+    my @newsgroups = split(/\s*,\s*/,$newsgroups);
+    my $date;
+    if ($header->header('NNTP-Posting-Date')) {
+        $date = $header->header('NNTP-Posting-Date');
+    } else {
+        $date = $header->header('Date');
+    }
+    chomp($date);
+
+    my $article = Email::Simple->new(join('',@{$news->article($mid)}));
+    
+    1;
+    
 }
 
 1;
