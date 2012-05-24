@@ -3,6 +3,8 @@
 use warnings;
 use strict;
 
+use utf8;
+
 use Term::Cap;
 use POSIX;
 
@@ -15,6 +17,7 @@ use News::NNTPClient;
 use YAML qw'LoadFile DumpFile';
 
 use Email::Simple;
+use Email::MIME;
 
 use Getopt::Long;
 Getopt::Long::Configure qw'bundling';
@@ -25,7 +28,7 @@ my $verbose;
 my $help;
 my $all;
 
-my $result = GetOptions("verbose|v" => \$verbose,
+my $result = GetOptions("verbose|v+" => \$verbose,
                         "help|h" => \$help,
                         "all|a" => \$all);
 
@@ -33,8 +36,8 @@ sub DisplayHelp {
     print "${under}${bold}NNTPMonitor${norm}\n\n";
     print "Perl-Script to send mails if certain keywords are found in Usenet-Groups via NNTP\n";
     print "The first run will NOT trigger events. All subsequent runs will trigger only on newer hits.\n\n";
-    print "Usage: $0 [-v] [-h] [-a]\n\n";
-    print "\t${bold}-v, --verbose${norm}\n\t\tBe verbose\n";
+    print "Usage: $0 [-vv] [-h] [-a]\n\n";
+    print "\t${bold}-v, --verbose${norm}\n\t\tBe verbose (multiple times for even more verbosity)\n";
     print "\t${bold}-h, --help${norm}\n\t\tDisplay this help screen\n";
     print "\t${bold}-a, --all${norm}\n\t\tTrigger on all found hits, not just on all new hits since last run. ${bold}Caution:${norm} Will take long to run and probably put heavy strain on the Newsserver and your mailbox.\n";
     print "\n";
@@ -96,7 +99,7 @@ my @newnews = $news->newnews($lastrun);
 for my $mid (@newnews) {
     chomp($mid);
     my $headertext = $news->head($mid);
-    my $header = Email::Simple->new(join('',@$headertext));
+    my $header = Email::MIME->new(join('',@$headertext));
  #   my $header = $parser->parse_data($headertext);
     if ($header->header('Control')) {
         # Control message, skip it!
@@ -113,8 +116,50 @@ for my $mid (@newnews) {
     }
     chomp($date);
 
-    my $article = Email::Simple->new(join('',@{$news->article($mid)}));
+    warn "Processing \"".$header->header('Subject')."\" (M-ID $mid)...\n" if ($verbose);
     
+    my $activetriggers;
+    
+    for my $trigger (keys %$triggers) {
+        my $groups = $triggers->{$trigger}->{groups};
+        die "Invalid group definition: $groups\n" if ($groups =~ /[^a-zA-Z., *]/);
+        $groups =~ s/\./\\./g;
+        $groups =~ s/\s*,\s*/|/g;
+        $groups =~ s/\*/.*/g;
+        for my $ng (@newsgroups) {
+            if ($ng =~ /$groups/) {
+                $activetriggers->{$trigger} = $triggers->{$trigger};
+                warn "\tFound trigger $trigger...\n" if ($verbose);
+            }
+        }
+    }
+    
+    1;
+    
+    my $article = Email::MIME->new(join('',@{$news->article($mid)}));
+    
+#    $article->walk_parts(sub {
+ #     my ($part) = @_;
+  #    return if $part->subparts; # multipart
+   #   1;
+      
+#      if ( $part->content_type =~ m[text/html]i ) {
+#          my $body = $part->body;
+          #$body =~ s/<link [^>]+>//; # simple filter example
+          #$part->body_set( $body );
+      #}
+#    });
+    for my $part ($article->parts) {
+        next if ($part->subparts); #multipart
+        next if ($part->content_type !~ /^text/);
+        
+        for my $trigger (keys %$activetriggers) {
+            if ($part->body =~ /$activetriggers->{$trigger}->{regexp}/) {
+                warn "\t\tSUCCESS! Found ". $activetriggers->{$trigger}->{regexp}."!\n" if ($verbose);
+            }
+        }
+        
+    }
     1;
     
 }
